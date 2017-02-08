@@ -32,7 +32,7 @@ var_dump(str_pad(1222, 6, '0', STR_PAD_LEFT));
 
 print_r(microtime() - $t);
 
-print_r(parse_url("http://qhj.xiaozhonglife.com")['host']);
+print_r(parse_url("http://qhj.xxx.com")['host']);
 
 var_dump(json_decode(""));
 
@@ -114,12 +114,7 @@ function findImg($photograph)
     }
 }
 
-print_r(explode('.', parse_url('http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-50-c149d9ps89ky4.jpg')['path'])[1]);
-
-print_r("\n");
-$input = '{"photograph":"[\"http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-50-c149d9ps89ky4.jpg\",\"http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-51-x1qwz1ha0yite1st.jpg\",\"http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-52-hrbmrlyxfnpcsrpb.jpg\",\"http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-52-g8uhxg99yhw5j9.jpg\",\"http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-53-cb585k7kf03x48l.jpg\",\"http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-54-lropf4v0azttc2jz.jpg\",\"http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-55-73ezjmg98e8u7vp4.jpg\",\"http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-56-cdd5oqaap4foeax0.jpg\",\"http://7xso35.com2.z0.glb.qiniucdn.com/2017-01-12-17-10-26-0y6qux1xj90hj5qx.jpg\"]"}';
-print_r(json_decode(json_decode($input)->photograph));
-var_export(findImg(json_decode($input)->photograph));
+print_r(explode('.', parse_url('http://asdi90s.com2.z0.glb.qiniucdn.com/2017-01-11-15-06-50-c149d9ps89ky4.jpg')['path'])[1]);
 
 print_r(date('Y-m-d His'));
 
