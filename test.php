@@ -141,3 +141,21 @@ function ss()
 }
 
 ss();
+
+class A
+{
+    public static function funcA()
+    {
+        static::funcB();
+    }
+}
+
+class B extends A
+{
+    public static function funcB()
+    {
+        echo "B::funcB()";
+    }
+}
+
+B::funcA();
