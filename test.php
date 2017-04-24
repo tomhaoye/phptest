@@ -159,3 +159,31 @@ class B extends A
 }
 
 B::funcA();
+
+
+function timeAgo($timeStr, $nowTimeStr)
+{
+    $timeDiff = $nowTimeStr - $timeStr;
+    if ($timeDiff < 60) {
+        return $timeDiff . ' seconds ago';
+    } elseif ($timeDiff < 3600) {
+        return ceil($timeDiff / 60) . ' minutes ago';
+    } elseif ($timeDiff < (3600 * 24)) {
+        return ceil($timeDiff / 3600) . ' hours ago';
+    } elseif ($timeDiff < (3600 * 24 * 30)) {
+        return ceil($timeDiff / (3600 * 24)) . ' days ago';
+    } else {
+        return ceil($timeDiff / (3600 * 24 * 30)) . ' months ago';
+    }
+}
+
+$time = time();
+
+echo "\n";
+$t = microtime();
+
+timeAgo($time, $time);
+
+print_r(microtime() - $t);
+
+print_r(PHP_EOL);
