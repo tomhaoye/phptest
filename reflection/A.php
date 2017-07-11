@@ -21,5 +21,17 @@
  */
 class A
 {
+    public $one;
+    public $two;
+
+    public function echoOne()
+    {
+        echo $this->one . PHP_EOL;
+    }
+
+    public function echoTwo()
+    {
+        echo $this->two . PHP_EOL;
+    }
 
 }

@@ -1,20 +1,14 @@
 <?php
-/**
- * | --------------------------------------------------------------------------
- * |
- * | This file is part of practice PROJECT
- * |
- * | Date: 17/7/10
- * |
- * | Copyright (C) 2015 Foshan Sami Network Technology Co.,Ltd.
- * | All rights reserved.
- * |
- * | Authors:
- * |       qiuyiwei
- * |
- * | This software, including documentation, is protected by copyright
- * | controlled by Foshan Sami Network Technology Co.,Ltd.
- * | All rights are reserved.
- * |
- * | --------------------------------------------------------------------------
- */
+require 'A.php';
+
+$a = new A();
+
+$re = new ReflectionClass('A');
+
+$properties = $re->getProperties();
+
+foreach ($properties as $property) {
+    $a->{$property->getName()} = 2;
+}
+
+print_r($a);
