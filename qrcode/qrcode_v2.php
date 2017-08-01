@@ -1,4 +1,5 @@
 <?php
+include 'rs_module.php';
 
 function getStringInput()
 {
@@ -39,14 +40,50 @@ function drawQRCode($mask = 1)
         7 => '110',
         8 => '111',
     ];
-    $fmt_code = exec('python rs_mask.py ' . $mask_code_arr[$mask]);
-    $fmt_code = json_decode($fmt_code);
+    $fmt_code = rsMask('01', intval($mask_code_arr[$mask], 2));
     $fmt_code = array_reverse($fmt_code);
     fillFmt($image, $fmt_code, $white, $black);
 
     exportPng($image, $mask);
 }
 
+/**
+ * 格式部分由两位容错等级代码和三位QR掩码代码构成
+ * L 01
+ * M 00
+ * Q 11
+ * H 10
+ * @param string $ec_code
+ * @param $mask
+ * @return array
+ */
+function rsMask($ec_code = '01', $mask)
+{
+    $fmt = fmtEncode(intval($ec_code . sprintf("%03b", $mask), 2));
+    $fmt = sprintf("%015b", $fmt);
+    $fmt_arr = [];
+    $length = strlen($fmt);
+    for ($i = 0; $i < $length; $i++) {
+        $fmt_arr[] = $fmt[$i];
+    }
+    return $fmt_arr;
+}
+
+//格式信息也是要加容错码的
+function fmtEncode($fmt)
+{
+    //Encode the 15-bit format code using BCH code
+    $g = 0x537;
+    $code = $fmt << 10;
+    for ($i = 4; $i > -1; $i--) {
+        if ($code & (1 << ($i + 10))) {
+            $code ^= $g << $i;
+        }
+    }
+    return (($fmt << 10) ^ $code) ^ 0b101010000010010;
+}
+
+//定位标示
 function buildLocateSign($image, $width, $location_mod, $black, $white)
 {
 //左上角定位
@@ -62,6 +99,7 @@ function buildLocateSign($image, $width, $location_mod, $black, $white)
     imagerectangle($image, 1, ($width - $location_mod) + 1, ($location_mod - 1) - 1, ($width - $location_mod) + ($location_mod - 1) - 1, $white);
 }
 
+//定时标示
 function buildTimeSign($image, $location_mod, $black)
 {
 //定时标示x
@@ -75,6 +113,24 @@ function buildTimeSign($image, $location_mod, $black)
     imagesetpixel($image, ($location_mod - 1), ($location_mod + 5), $black);
 }
 
+/**
+ * 真正的数据编码
+ *
+ * 编码模式:
+ * 1\数字（Numeric）：0-9
+ * 2\大写字母和数字（alphanumeric）：0-9，A-Z，空格，$，%，*，+，-，.，/，:
+ * 3\二进制/字节：通过 ISO/IEC 8859-1 标准编码
+ * 4\日本汉字/假名：通过 Shift JISJIS X 0208 标准编码
+ *
+ * byte mode的前缀是 0100，接上八位二进制数代表的数据长度，构成数据前缀。
+ * 再把数据用 ISO/IEC 8859-1 标准编码，
+ * 按八个二进制位分组，接上终止符和11101100和00010001交替的填充字节，按标准修剪到19字节，完成数据编码
+ *
+ * @param $image
+ * @param $white
+ * @param $black
+ * @param int $mask
+ */
 function encodeString($image, $white, $black, $mask = 1)
 {
     $data = 'hello mask!';
@@ -94,13 +150,12 @@ function encodeString($image, $white, $black, $mask = 1)
         $res[] = intval('00010001', 2);
     }
     unset($res[19]);
-    $res = implode(',', $res);
-    $return = exec('python rs.py ' . $res);
-    $return = json_decode($return);
+    //加入容错编码 L 7
+    $return = rsEncode($res, 7);
     foreach ($return as &$item) {
         $item = sprintf("%08b", $item);
     }
-//填写编码数据ad hoc
+    //填写编码数据ad hoc
     foreach ($return as $key => $item) {
         for ($p = 0; $p < 8; $p++) {
             $fill_arr[$key][$p] = $item[$p];
@@ -136,18 +191,31 @@ function encodeString($image, $white, $black, $mask = 1)
 
 }
 
+/**
+ * @param $mask_id
+ * @param $image
+ * @param $start_x
+ * @param $start_y
+ * @param $fill_arr
+ * @param $white
+ * @param $black
+ * @param bool $cross 是否跨定时标示行
+ * @param bool $up 当前方向
+ */
 function fillData($mask_id, $image, $start_x, $start_y, $fill_arr, $white, $black, $cross = false, $up = true)
 {
     for ($i = 0; $i < 8; $i++) {
         if ($i % 2 == 0)
-            imagesetpixel($image, $start_x, $start_y - ($up ? 1 : -1) * floor($i / 2), (!empty($fill_arr[$i]) ^ mask($start_x, $start_y - ($up ? 1 : -1) * floor($i / 2), $mask_id)) ? $black : $white);
+            imagesetpixel($image, $start_x, $start_y - ($up ? 1 : -1) * floor($i / 2),
+                (!empty($fill_arr[$i]) ^ mask($start_x, $start_y - ($up ? 1 : -1) * floor($i / 2), $mask_id)) ? $black : $white);
         else
-            imagesetpixel($image, $start_x - 1, $start_y - ($up ? 1 : -1) * (floor($i / 2) + ($cross ? 1 : 0)), (!empty($fill_arr[$i]) ^ mask($start_x - 1, $start_y - ($up ? 1 : -1) * (floor($i / 2) + ($cross ? 1 : 0)), $mask_id)) ? $black : $white);
+            imagesetpixel($image, $start_x - 1, $start_y - ($up ? 1 : -1) * (floor($i / 2) + ($cross ? 1 : 0)),
+                (!empty($fill_arr[$i]) ^ mask($start_x - 1, $start_y - ($up ? 1 : -1) * (floor($i / 2) + ($cross ? 1 : 0)), $mask_id)) ? $black : $white);
     }
 }
 
-//八种掩码
-/*
+/**
+ * 八种掩码
  * dark if (row + column) mod 2 == 0
  * dark if (row) mod 2 == 0
  * dark if (column) mod 3 == 0
@@ -156,7 +224,12 @@ function fillData($mask_id, $image, $start_x, $start_y, $fill_arr, $white, $blac
  * dark if ((row * column) mod 2) + ((row * column) mod 3) == 0
  * dark if ( ((row * column) mod 2) + ((row * column) mod 3) ) mod 2 == 0
  * dark if ( ((row + column) mod 2) + ((row * column) mod 3) ) mod 2 == 0
-*/
+ *
+ * @param $column
+ * @param $row
+ * @param $type
+ * @return bool
+ */
 function mask($column, $row, $type)
 {
     switch ($type) {
@@ -193,8 +266,12 @@ function mask($column, $row, $type)
 /*
  * todo 惩罚计算
  */
+function penalty()
+{
 
+}
 
+//格式标示
 function fillFmt($image, $arr, $white, $black)
 {
     for ($i = 0; $i <= 5; $i++)
