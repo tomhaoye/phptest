@@ -178,6 +178,8 @@ function encodeString($data, $image, $white, $black)
         $mask_template[$mask_id] = maskTemplate($template, $mask_id);
         $penalty[$mask_id] = penalty($mask_template[$mask_id]);
     }
+    print_r($penalty);
+
     $mask_id = array_search(min($penalty), $penalty);
     $mask_template = $mask_template[$mask_id];
 
@@ -334,6 +336,8 @@ function mask($column, $row, $type)
 }
 
 /**
+ * todo 需要全模板才能适用，所以当前版本并不能准确计算
+ *
  * 懲罰計算
  * Calculate penalty score for a masked matrix.
  * N1: penalty for more than 5 consecutive pixels in row/column,
@@ -375,9 +379,9 @@ function penalty($matrix)
                 if (!$adj) {
                     $adj = true;
                     $n1 += 3;
+                } else {
+                    $n1 += 1;
                 }
-            } else {
-                $n1 += 1;
             }
         }
     }
@@ -395,9 +399,9 @@ function penalty($matrix)
                 if (!$adj) {
                     $adj = true;
                     $n1 += 3;
+                } else {
+                    $n1 += 1;
                 }
-            } else {
-                $n1 += 1;
             }
         }
     }
@@ -407,11 +411,9 @@ function penalty($matrix)
     $n = 1;
     for ($j = 1; $j < count($matrix); $j++) {
         for ($i = 1; $i < count($matrix); $i++) {
-            if (isset($matrix[$j][$i]) and isset($matrix[$j - 1][$i]) and isset($matrix[$j][$i - 1]) and isset($matrix[$j - 1][$i - 1]) and $matrix[$j][$i] == $matrix[$j - 1][$i] and $matrix[$j][$i] == $matrix[$j][$i - 1] and $matrix[$j][$i] == $matrix[$j - 1][$i - 1]) {
-                if ($matrix[$j][$i] == $matrix[$j - 1][$i]) {
+            if (isset($matrix[$j][$i]) and isset($matrix[$j - 1][$i]) and isset($matrix[$j][$i - 1]) and isset($matrix[$j - 1][$i - 1])) {
+                if ($matrix[$j][$i] == $matrix[$j - 1][$i] and $matrix[$j][$i] == $matrix[$j][$i - 1] and $matrix[$j][$i] == $matrix[$j - 1][$i - 1]) {
                     $m += 1;
-                }
-                if ($matrix[$j][$i] == $matrix[$j][$i - 1]) {
                     $n += 1;
                 }
             } else {
@@ -422,8 +424,32 @@ function penalty($matrix)
         }
     }
 
-    //todo N3
-
+    //N3一个方向寻找
+    $count = 0;
+    foreach ($matrix as $row) {
+        $row_str = implode('', $row);
+        $begin = 0;
+        while ($begin < strlen($row_str) and strpos('00001011101', $row_str, $begin) !== false) {
+            $begin = strpos('00001011101', $row_str, $begin) + 11;
+            $count += 1;
+        }
+    }
+    //另一个方向 矩阵转置
+    $transpose_matrix = [];
+    foreach ($matrix as $row) {
+        foreach ($row as $key => $value) {
+            $transpose_matrix[$key][] = $value;
+        }
+    }
+    foreach ($transpose_matrix as $row) {
+        $row_str = implode('', $row);
+        $begin = 0;
+        while ($begin < strlen($row_str) and strpos('00001011101', $row_str, $begin) !== false) {
+            $begin = strpos('00001011101', $row_str, $begin) + 11;
+            $count += 1;
+        }
+    }
+    $n3 += $count * 40;
 
     //N4
     $dark = getSum($matrix);
@@ -431,6 +457,8 @@ function penalty($matrix)
     $pre = $percent - $percent % 5;
     $nex = $percent + 5 - $percent % 5;
     $n4 = min(abs($pre - 50) / 5, abs($nex - 50) / 5) * 10;
+
+    print_r([$n1, $n2, $n3, $n3]);
     return $n1 + $n2 + $n3 + $n4;
 }
 
@@ -479,6 +507,5 @@ function exportPng($image, $mask_id)
     imagepng($image, 'mask' . $mask_id . 'v3_png.png');
     imagedestroy($image);
 }
-
 
 getStringInput();
