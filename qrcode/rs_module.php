@@ -74,6 +74,14 @@ function rsGenPoly($nsym)
     return $g;
 }
 
+/**
+ * 根据不同容错等级需要加入的EC块数量
+ * version 1
+ *
+ * @param $bitstring
+ * @param $nsym
+ * @return array
+ */
 function rsEncode($bitstring, $nsym)
 {
     //Encode bitstring with nsym EC bits using RS algorithm.
