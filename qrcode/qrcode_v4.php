@@ -210,7 +210,6 @@ function encodeString($data, $image, $white, $black)
 
         $penalty[$mask_id] = penalty($mask_template[$mask_id]);
     }
-    print_r($penalty);
 
     $mask_id = array_search(min($penalty), $penalty);
     $mask_template = $mask_template[$mask_id];
@@ -392,12 +391,12 @@ function penalty($matrix)
     $n2 = 0;
     $n3 = 0;
     $n4 = 0;
-    //N1
+    //N1寻找连续同色块which >= 5
     for ($j = 0; $j < count($matrix); $j++) {
         $count = 1;
         $adj = false;
         for ($i = 1; $i < count($matrix); $i++) {
-            if (isset($matrix[$j][$i - 1]) and isset($matrix[$j][$i]) and $matrix[$j][$i] == $matrix[$j][$i - 1]) {
+            if ($matrix[$j][$i] == $matrix[$j][$i - 1]) {
                 $count += 1;
             } else {
                 $count = 1;
@@ -434,34 +433,31 @@ function penalty($matrix)
         }
     }
 
-    //N2
-    $m = 1;
-    $n = 1;
+    //N2寻找m*n的同色块
+    $count = 0;
     for ($j = 1; $j < count($matrix); $j++) {
         for ($i = 1; $i < count($matrix); $i++) {
             if ($matrix[$j][$i] == $matrix[$j - 1][$i] and $matrix[$j][$i] == $matrix[$j][$i - 1] and $matrix[$j][$i] == $matrix[$j - 1][$i - 1]) {
-                $m += 1;
-                $n += 1;
-            } else {
-                $n2 += 3 * ($m - 1) * ($n - 1);
-                $m = 1;
-                $n = 1;
+                $count += 1;
             }
         }
     }
+    $n2 += 3 * $count;
 
-    //N3一个方向寻找
+    //N3寻找连续四空色块0000连接1011101色块
+    //一个方向寻找
     $count = 0;
     foreach ($matrix as $row) {
         $row_str = implode('', $row);
+
         $begin = 0;
-        while ($begin < strlen($row_str) and strpos('00001011101', $row_str, $begin) !== false) {
-            $begin = strpos('00001011101', $row_str, $begin) + 11;
+        while ($begin < strlen($row_str) and strpos($row_str, '00001011101', $begin) !== false) {
+            $begin = strpos($row_str, '00001011101', $begin) + 11;
             $count += 1;
         }
         $begin = 0;
-        while ($begin < strlen($row_str) and strpos('10111010000', $row_str, $begin) !== false) {
-            $begin = strpos('10111010000', $row_str, $begin) + 11;
+        while ($begin < strlen($row_str) and strpos($row_str, '10111010000', $begin) !== false) {
+            $begin = strpos($row_str, '10111010000', $begin) + 11;
             $count += 1;
         }
     }
@@ -474,27 +470,27 @@ function penalty($matrix)
     }
     foreach ($transpose_matrix as $row) {
         $row_str = implode('', $row);
+
         $begin = 0;
-        while ($begin < strlen($row_str) and strpos('00001011101', $row_str, $begin) !== false) {
-            $begin = strpos('00001011101', $row_str, $begin) + 11;
+        while ($begin < strlen($row_str) and strpos($row_str, '00001011101', $begin) !== false) {
+            $begin = strpos($row_str, '00001011101', $begin) + 11;
             $count += 1;
         }
         $begin = 0;
-        while ($begin < strlen($row_str) and strpos('10111010000', $row_str, $begin) !== false) {
-            $begin = strpos('10111010000', $row_str, $begin) + 11;
+        while ($begin < strlen($row_str) and strpos($row_str, '10111010000', $begin) !== false) {
+            $begin = strpos($row_str, '10111010000', $begin) + 11;
             $count += 1;
         }
     }
     $n3 += $count * 40;
 
-    //N4
+    //N4计算黑色块占比
     $dark = getSum($matrix);
     $percent = intval((floatval($dark)) / floatval(pow(count($matrix), 2)) * 100);
     $pre = $percent - $percent % 5;
     $nex = $percent + 5 - $percent % 5;
     $n4 = min(abs($pre - 50) / 5, abs($nex - 50) / 5) * 10;
 
-    print_r([$n1, $n2, $n3, $n4]);
     return $n1 + $n2 + $n3 + $n4;
 }
 
